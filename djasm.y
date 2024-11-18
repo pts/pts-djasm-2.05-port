@@ -1798,6 +1798,7 @@ int is_structure(Symbol *s)
 
 int set_structure_symbols(Symbol *ele, Symbol *struc, int tp, int base, int type)
 {
+  (void)tp;
   if (!struc->defined) {
     djerror("undefined symbol used in struct");
     return 0;
@@ -3189,6 +3190,7 @@ void write_LEDATA(FILE *outfile, int segment, unsigned char *outbin, int size,
   off_t lenptr,cptr;
   unsigned char checksum=0;
 
+  (void)symtab;
   while (size)
     {
       len=size;
