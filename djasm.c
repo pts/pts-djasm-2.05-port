@@ -325,7 +325,7 @@
 #define O_BINARY 0
 #endif
 #undef _POSIX_SOURCE
-#include "../../include/coff.h"
+#include "coff.h"
 
 #define SMALL_EXE_HEADER 0
 #if SMALL_EXE_HEADER
