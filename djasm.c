@@ -741,7 +741,7 @@ typedef struct Symbol {
   int value;
   unsigned defined:1;
   unsigned external:1;
-  unsigned public:1;
+  unsigned _public:1;
   struct Patch *patches;
   int first_used;
   int type;
@@ -783,7 +783,7 @@ void emit_struct(Symbol *ele, int tp, Symbol *struc);
 void emit_struct_abs(Symbol *ele, int tp, Symbol *struc, int offset);
 void build_struct(Symbol *ele, int tp, Symbol *struc);
 
-struct {
+struct modrm {
   int regs;
   int offset;
   int addr16;
@@ -811,7 +811,7 @@ void emits(Symbol *s, int offset, int rel);
 void modrm(int mod, int reg, int rm);
 void reg(int reg);
 void addr32(int sib);
-void sortsyms();
+void sortsyms(int (*sortf)(void const *,void const *));
 
 int istemp(char *symname, char which);
 int islocal(char *symname);
@@ -829,7 +829,7 @@ void do_linkcoff(char *fname);
 
 void write_THEADR(FILE *outfile, char *inname);
 void write_LNAMES(FILE *outfile, ...);
-void write_SEGDEF(FILE *outfile, int size, int name, int class, int overlay);
+void write_SEGDEF(FILE *outfile, int size, int name, int _class, int overlay);
 void write_EXTDEF(FILE *outfile, Symbol *symtab);
 void write_PUBDEF(FILE *outfile, Symbol *symtab, int bss_start);
 void write_LEDATA(FILE *outfile, int segment, unsigned char *outbin, int size,
@@ -5835,7 +5835,7 @@ Symbol *get_symbol(char *name, int create)
   s->value = 0;
   s->defined = 0;
   s->external = 0;
-  s->public = 0;
+  s->_public = 0;
   s->patches = 0;
   s->first_used = lineno;
   s->type = SYM_unknown;
@@ -5851,7 +5851,7 @@ add_enum_element(Symbol * s)
   }
   else
   {
-    char *id = alloca(strlen(s->name) + strlen(struct_sym) + 2);
+    char *id = (char*)alloca(strlen(s->name) + strlen(struct_sym) + 2);
     strcpy(id, struct_sym);
     strcat(id, ".");		/* should this be "_" to disambiguate enums
 				   from structs? */
@@ -5870,7 +5870,7 @@ void add_struct_element(Symbol *s)
   if (islocal(s->name) || istemp(s->name,0)) {
     djerror("Cannot have local or temporary labels within a structure");
   } else {
-    char *id=alloca(strlen(s->name)+strlen(struct_sym)+2);
+    char *id=(char*)alloca(strlen(s->name)+strlen(struct_sym)+2);
     strcpy(id,struct_sym);
     strcat(id,".");
     strcat(id,s->name);
@@ -5923,7 +5923,7 @@ int set_structure_symbols(Symbol *ele, Symbol *struc, int tp, int base, int type
     int eLen=strlen(ele->name);
     Symbol *s=struc->next;
     while (s && !strncmp(s->name,struc->name,sLen) && s->name[sLen]=='.') {
-      char *id=alloca(strlen(s->name)-sLen+eLen+1);
+      char *id=(char*)alloca(strlen(s->name)-sLen+eLen+1);
       strcpy(id,ele->name);
       strcpy(id+eLen,s->name+sLen);
       set_symbol(get_symbol(id,1),base+s->value)->type|=type;
@@ -5953,7 +5953,7 @@ void build_struct(Symbol *ele, int tp, Symbol *struc)
   if (ele && (islocal(ele->name) || istemp(ele->name,0))) {
     djerror("Cannot have local or temporary labels within a structure");
   } else {
-    char *id=alloca((ele?strlen(ele->name):0)+strlen(struct_sym)+2);
+    char *id=(char*)alloca((ele?strlen(ele->name):0)+strlen(struct_sym)+2);
     Symbol *sym;
     strcpy(id,struct_sym);
     if (ele) {
@@ -6139,7 +6139,7 @@ void emit(void *ptr, int len)
   {
     outsize = outsize < 0x1000 ? 0x1000 : outsize << 1;
     if ((int)outsize < 0) outsize = -1;  /* Produce out-of-memory on overflow. */
-    outbin = xrealloc(outbin, outsize);
+    outbin = (unsigned char*)xrealloc(outbin, outsize);
   }
   set_lineaddr();
   memcpy(outbin+pc, ptr, len);
@@ -6497,7 +6497,7 @@ int yylex1(void)
       if (strcmp(strbuf, ".") == 0)
         return PC;
       op.name = strbuf;
-      opp = bsearch (&op,
+      opp = (struct opcode*)bsearch (&op,
 		     opcodes, 
 		     sizeof (opcodes) / sizeof (opcodes[0]),
 		     sizeof (opcodes[0]),
@@ -6909,12 +6909,12 @@ void do_linkcoff(char *filename)
     }
   len = lseek (f, 0L, SEEK_END);
   lseek (f, 0L, SEEK_SET);
-  data = alloca (len);
+  data = (char*)alloca (len);
   read (f, data, (unsigned)len);
   close (f);
 
   header = (FILHDR *) data;
-  f_thdr = (void*)((char *)data + sizeof (FILHDR) + header->f_opthdr);
+  f_thdr = (SCNHDR*)((char *)data + sizeof (FILHDR) + header->f_opthdr);
   f_dhdr = f_thdr + 1;
   f_bhdr = f_dhdr + 1;
   if (I386BADMAG (*header)
@@ -6945,7 +6945,7 @@ void do_linkcoff(char *filename)
   printf (stderr,"bssbase  is at %04x\n", bssbase);
 #endif
 
-  symbol = (void*)((char *) data + header->f_symptr);
+  symbol = (SYMENT*)((char *) data + header->f_symptr);
   base = (void*)((char *) symbol + header->f_nsyms * SYMESZ);
   coff_filename = strdup (filename);
   for (cnt = header->f_nsyms; cnt > 0; symbol++, cnt--)
@@ -6991,7 +6991,7 @@ void do_linkcoff(char *filename)
       symbol += symbol->e_numaux;
     }
 
-  symbol = (void*)((char*) data + header->f_symptr);
+  symbol = (SYMENT*)((char*) data + header->f_symptr);
   for (i = 0; i < 2; i++)
     {
       if (i == 0)
@@ -7197,16 +7197,16 @@ void write_LNAMES(FILE *outfile, ...)
     }
 }
 
-void write_SEGDEF(FILE *outfile, int size, int name, int class, int overlay)
+void write_SEGDEF(FILE *outfile, int size, int name, int _class, int overlay)
 {
   unsigned char checksum=0;
   write_BYTE(0x98,outfile,&checksum);
-  write_WORD(7+(name>127)+(class>127)+(overlay>127),outfile,&checksum);
-  /* A=2 (word), C=2 (public), B=?, P=0 */
+  write_WORD(7+(name>127)+(_class>127)+(overlay>127),outfile,&checksum);
+  /* A=2 (word), C=2 (_public), B=?, P=0 */
   write_BYTE(0x48|((size==0x1000)<<1),outfile,&checksum);
   write_WORD(size,outfile,&checksum);
   write_INDEX(name,outfile,&checksum);
-  write_INDEX(class,outfile,&checksum);
+  write_INDEX(_class,outfile,&checksum);
   write_INDEX(overlay,outfile,&checksum);
   write_BYTE(checksum,outfile,&checksum); /* sets checksum to 0 */
 }
@@ -7269,7 +7269,7 @@ void write_PUBDEF(FILE *outfile, Symbol *symtab, int bss_start)
 
   while (sym)
     {
-      if (sym->public && sym->defined) /* silently ignore undefined pubdefs */
+      if (sym->_public && sym->defined) /* silently ignore undefined pubdefs */
         {
 	  write_BYTE(0x96,outfile,&checksum);
 	  /* reserve space for the length field */
