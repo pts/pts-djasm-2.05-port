@@ -321,14 +321,53 @@
 #include <time.h>
 #include <ctype.h>
 #include <unistd.h>
+
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-#undef _POSIX_SOURCE
-#include "coff.h"
 
 /* This program is untested with smaller or larger ints. YYSTYPE should be changed first. */
 typedef char assert_sizeof_int_4[sizeof(int) == 4 ? 1 : -1];
+typedef char assert_sizeof_unsigned_short[sizeof(unsigned short) ? 1 : -1];  /* make sure it is 32 bits */
+
+#ifndef LONG32  /* the following are needed when cross compiling hostbin exes */
+#  ifdef  _LP64  /* Note: win64 is LLP64 */
+#    define LONG32  int
+#    define ULONG32 unsigned int
+#  else
+#    define LONG32  long
+#    define ULONG32 unsigned long
+#  endif
+#endif
+
+typedef char assert_sizeof_LONG32[sizeof(LONG32) == 4 ? 1 : -1];  /* make sure it is 32 bits */
+
+#undef USE_COFF
+#undef USE_COFF_UNCHECKED
+#ifdef USE_NO_COFF  /* -DUSE_NO_COFF */
+#else
+#if defined(__BIG_ENDIAN__) || (defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__) || \
+    defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__) || \
+    defined(__powerpc__) || defined(_M_PPC) || defined(__m68k__) || defined(_ARCH_PPC) || defined(__PPC__) || defined(__PPC) || defined(PPC) || \
+    defined(__powerpc) || defined(powerpc) || (defined(__BIG_ENDIAN) && (!defined(__BYTE_ORDER) || __BYTE_ORDER == __BIG_ENDIAN +0)) || \
+    defined(_BIG_ENDIAN)
+#else
+#if defined(__LITTLE_ENDIAN__) || (defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) || \
+    defined(__ARMEL__) || defined(__THUMBEL__) || defined(__AARCH64EL__) || defined(_MIPSEL) || defined (__MIPSEL) || defined(__MIPSEL__) || \
+    defined(__ia64__) || defined(__LITTLE_ENDIAN) || defined(_LITTLE_ENDIAN) || defined(MSDOS) || defined(__MSDOS__) || IS_X86
+  /* Known good little-endian system. */
+#define USE_COFF 1
+#define USE_COFF_UNCHECKED 1
+#else
+#define USE_COFF 1
+/*#define USE_COFF_UNCHECKED 1*/
+#endif
+#endif
+#endif
+
+#ifdef USE_COFF
+#include "coff.h"
+#endif
 
 #define SMALL_EXE_HEADER 0
 #if SMALL_EXE_HEADER
@@ -6545,7 +6584,8 @@ void do_include(char *fname)
 
 /* #define DEBUG_RELOC */
 
-void do_linkcoff (char *filename)
+#ifdef USE_COFF
+void do_linkcoff(char *filename)
 {
   long len;
   int f;
@@ -6567,6 +6607,11 @@ void do_linkcoff (char *filename)
 #endif
   char smallname[9];
 /*unsigned char *cp;*/
+
+#ifndef USE_COFF_UNCHECKED
+  len = 1;
+  if (!*(const char*)&len) fatal("little-endian system needed by .linkcoff");
+#endif
 
   f = open (filename, O_RDONLY | O_BINARY);
   if (f < 0)
@@ -6754,6 +6799,13 @@ void do_linkcoff (char *filename)
 	}
     }
 }
+#else
+void do_linkcoff(char *filename)
+{
+  (void)filename;
+  fatal(".linkcoff disabled in this build");
+}
+#endif  /* #ifdef USE_COFF */
 
 int write_BYTE(unsigned char byte, FILE *outfile, unsigned char *checksum)
 {

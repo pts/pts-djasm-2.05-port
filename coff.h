@@ -5,9 +5,8 @@
 #ifndef __dj_include_coff_h_
 #define __dj_include_coff_h_
 
+#ifndef LONG32
 /* the following are needed when cross compiling hostbin exes */
-#ifndef _DJ_DEFINED_NATIVE_TYPES
-#define _DJ_DEFINED_NATIVE_TYPES
 #ifdef  _LP64			/* Note: win64 is LLP64 */
 # define LONG32  int
 # define ULONG32 unsigned int
@@ -15,24 +14,10 @@
 # define LONG32  long
 # define ULONG32 unsigned long
 #endif
-/* make sure it is 32 bits */
-typedef int _DJCHK_LONG32[(sizeof(LONG32) == 4)*3 - 1];
-#endif /* _DEFINED_NATIVE_TYPES */
-
-#ifdef __cplusplus
-extern "C" {
 #endif
 
-#ifndef __dj_ENFORCE_ANSI_FREESTANDING
-
-#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) \
-  || !defined(__STRICT_ANSI__) || defined(__cplusplus)
-
-#endif /* (__STDC_VERSION__ >= 199901L) || !__STRICT_ANSI__ */
-
-#ifndef __STRICT_ANSI__
-
-#ifndef _POSIX_SOURCE
+typedef int _DJCOFFCHK_unsigned_short[(sizeof(unsigned short) == 2)*3 - 1];  /* make sure it is 32 bits */
+typedef int _DJCOFFCHK_LONG32[(sizeof(LONG32) == 4)*3 - 1];  /* make sure it is 32 bits */
 
 /*** coff information for Intel 386/486.  */
 
@@ -47,7 +32,7 @@ struct external_filehdr {
   unsigned short f_opthdr;	/* sizeof(optional hdr)		*/
   unsigned short f_flags;	/* flags			*/
 };
-
+typedef int _DJCOFFCHK_struct_external_filehdr[(sizeof(struct external_filehdr) == 5 * 4)*3 - 1];  /* make sure it is 32 bits */
 
 /* Bits for f_flags:
  *	F_RELFLG	relocation info stripped from file
@@ -62,8 +47,6 @@ struct external_filehdr {
 #define F_LNNO		(0x0004)
 #define F_LSYMS		(0x0008)
 
-
-
 #define I386MAGIC	0x14c
 #define I386AIXMAGIC	0x175
 #define I386BADMAG(x)	(((x).f_magic != I386MAGIC) && ((x).f_magic != I386AIXMAGIC))
@@ -71,43 +54,6 @@ struct external_filehdr {
 
 #define FILHDR	struct external_filehdr
 #define FILHSZ	sizeof(FILHDR)
-
-
-/********************** AOUT "OPTIONAL HEADER" **********************/
-
-
-typedef struct
-{
-  unsigned short	magic;		/* type of file				*/
-  unsigned short	vstamp;		/* version stamp			*/
-  ULONG32		tsize;		/* text size in bytes, padded to FW bdry*/
-  ULONG32		dsize;		/* initialized data "  "		*/
-  ULONG32		bsize;		/* uninitialized data "   "		*/
-  ULONG32		entry;		/* entry pt.				*/
-  ULONG32		text_start;	/* base of text used for this file */
-  ULONG32		data_start;	/* base of data used for this file */
-}
-AOUTHDR;
-
-
-typedef struct gnu_aout {
-  ULONG32 info;
-  ULONG32 tsize;
-  ULONG32 dsize;
-  ULONG32 bsize;
-  ULONG32 symsize;
-  ULONG32 entry;
-  ULONG32 txrel;
-  ULONG32 dtrel;
-}
-GNU_AOUT;
-
-#define AOUTSZ (sizeof(AOUTHDR))
-
-#define OMAGIC          0404    /* object files, eg as output */
-#define ZMAGIC          0413    /* demand load format, eg normal ld output */
-#define STMAGIC		0401	/* target shlib */
-#define SHMAGIC		0443	/* host   shlib */
 
 
 /********************** SECTION HEADER **********************/
@@ -128,6 +74,7 @@ struct external_scnhdr {
 
 #define SCNHDR	struct external_scnhdr
 #define SCNHSZ	sizeof(SCNHDR)
+typedef int _DJCOFFCHK_SCNHDR[(SCNHSZ == 10 * 4)*3 - 1];  /* make sure it is 32 bits */
 
 /*
  * names of "special" sections
@@ -164,7 +111,7 @@ struct external_lineno {
 #define LINENO	struct external_lineno
 #define LINESZ	sizeof(LINENO)
 /* make sure that structure packing is correct */
-typedef int _DJCHK_EXTLINENO[(LINESZ==6)*3 - 1];
+typedef int _DJCOFFCHK_EXTLINENO[(LINESZ==6)*3 - 1];
 
 
 /********************** SYMBOLS **********************/
@@ -243,8 +190,8 @@ union external_auxent {
 #define AUXENT	union external_auxent
 #define AUXESZ	sizeof(AUXENT)
 /* make sure that structure packing is correct */
-typedef int _DJCHK_EXTSYMENT[(SYMESZ==18)*3 - 1];
-typedef int _DJCHK_EXTAUXENT[(AUXESZ==18)*3 - 1];
+typedef int _DJCOFFCHK_EXTSYMENT[(SYMESZ==18)*3 - 1];
+typedef int _DJCOFFCHK_EXTAUXENT[(AUXESZ==18)*3 - 1];
 
 
 #define _ETEXT	"etext"
@@ -341,7 +288,7 @@ struct external_reloc {
 #define RELOC struct external_reloc
 #define RELSZ sizeof(RELOC)
 /* make sure that structure packing is correct */
-typedef int _DJCHK_EXTRELOC[(RELSZ==10)*3 - 1];
+typedef int _DJCOFFCHK_EXTRELOC[(RELSZ==10)*3 - 1];
 
 #define RELOC_REL32	20	/* 32-bit PC-relative address */
 #define RELOC_ADDR32	6	/* 32-bit absolute address */
@@ -351,16 +298,5 @@ typedef int _DJCHK_EXTRELOC[(RELSZ==10)*3 - 1];
 #define DEFAULT_TEXT_SECTION_ALIGNMENT 4
 /* For new sections we havn't heard of before */
 #define DEFAULT_SECTION_ALIGNMENT 4
-
-#endif /* !_POSIX_SOURCE */
-#endif /* !__STRICT_ANSI__ */
-#endif /* !__dj_ENFORCE_ANSI_FREESTANDING */
-
-#ifndef __dj_ENFORCE_FUNCTION_CALLS
-#endif /* !__dj_ENFORCE_FUNCTION_CALLS */
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* !__dj_include_coff_h_ */
