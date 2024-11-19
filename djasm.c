@@ -312,7 +312,10 @@
 
 
 #define YYDEBUG 1
-  
+
+#define _POSIX_SOURCE  /* strdup(...), ctime_r(...). */
+#define _SVID_SOURCE  /* alloca(...). */
+#define _DEFAULT_SOURCE  /* alloca(...). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
