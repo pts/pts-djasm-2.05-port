@@ -2359,6 +2359,11 @@ static struct {
   {'>', '>', OP_SHR}
 };
 
+static char is_name_char(char c)
+{
+  return (c | 32) - 'a' + 0U <= 'z' - 'a' + 0U || c - '0' + 0U <= 9U || c == '_' || c == '$' || c == '.' || c == '@';
+}
+
 static void fatal(const char *reason)
 {
   fprintf(stderr, "%s:%d: fatal: %s\n", inname, lineno, reason);
@@ -2369,13 +2374,14 @@ int yylex1(void)
 {
   int c, c2, i, oldc;
   struct opcode *opp, op;
+  char *p;
 
   do {
     c = fgetc(infile);
   } while (c == ' ' || c == '\t');
 
-  if ((c | 32) - 'a' + 0U <= 'z' - 'a' + 0U || c == '_' || c == '$' || c == '.' || c == '@') goto do_name;
-  if (c - '0' + 0U <= 9U) goto do_number;
+  if (c - '0' + 0U <= 9U) goto do_number;  /* This must come before is_name_char(...) below. */
+  if (is_name_char(c)) goto do_name;
 
   switch (c)
   {
@@ -2396,8 +2402,14 @@ int yylex1(void)
 
     case '?':
     do_name:
-      strbuf[0]=c;
-      if (fscanf(infile, "%[a-zA-Z0-9_$.@]", strbuf+1) != 1) strbuf[1] = '\0';
+      p = strbuf;
+      do {
+	if (c < 0) fatal("EOF in name");
+	*p++ = c;
+	if (p == strbuf + sizeof(strbuf)) fatal("name too long");
+      } while (is_name_char(c = getc(infile)));
+      *p = '\0';
+      ungetc(c, infile);
       strcpy(last_token, strbuf);
       if (strcmp(strbuf, ".") == 0)
         return PC;
