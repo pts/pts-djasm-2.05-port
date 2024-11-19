@@ -2884,7 +2884,7 @@ void do_linkcoff(char *filename)
   close (f);
 
   header = (FILHDR *) data;
-  f_thdr = (void *)data + sizeof (FILHDR) + header->f_opthdr;
+  f_thdr = (void*)((char *)data + sizeof (FILHDR) + header->f_opthdr);
   f_dhdr = f_thdr + 1;
   f_bhdr = f_dhdr + 1;
   if (I386BADMAG (*header)
@@ -2915,13 +2915,13 @@ void do_linkcoff(char *filename)
   printf (stderr,"bssbase  is at %04x\n", bssbase);
 #endif
 
-  symbol = (void *) data + header->f_symptr;
-  base = (void *) symbol + header->f_nsyms * SYMESZ;
+  symbol = (void*)((char *) data + header->f_symptr);
+  base = (void*)((char *) symbol + header->f_nsyms * SYMESZ);
   coff_filename = strdup (filename);
   for (cnt = header->f_nsyms; cnt > 0; symbol++, cnt--)
     {
       if (symbol->e.e.e_zeroes == 0)
-	p = base + symbol->e.e.e_offset;
+	p = (char*)base + symbol->e.e.e_offset;
       else
 	strncpy (p = smallname, symbol->e.e_name, 8),
 	p[8] = 0;
@@ -2961,7 +2961,7 @@ void do_linkcoff(char *filename)
       symbol += symbol->e_numaux;
     }
 
-  symbol = (void *) data + header->f_symptr;
+  symbol = (void*)((char*) data + header->f_symptr);
   for (i = 0; i < 2; i++)
     {
       if (i == 0)
@@ -2983,7 +2983,7 @@ void do_linkcoff(char *filename)
 
 
 	  if (symbol[rp->r_symndx].e.e.e_zeroes == 0)
-	    p = base + symbol[rp->r_symndx].e.e.e_offset;
+	    p = (char*)base + symbol[rp->r_symndx].e.e.e_offset;
 	  else
 	    strncpy (p = smallname, symbol[rp->r_symndx].e.e_name, 8),
 	    p[8] = 0;
