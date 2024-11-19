@@ -5105,6 +5105,15 @@ opcode_compare (const void *e1, const void *e2)
   return strcmp (((struct opcode *)e1)->name, ((struct opcode *)e2)->name);
 }
 
+static int symcount;
+
+static void print_stats(FILE *f)
+{
+#define PFX(x) ((x) ? "0x" : ""), (x)
+  fprintf(f, "%s%x bytes generated, %s%x bytes in file, %s%x bytes total, %d symbols\n",
+    PFX(generated_bytes), PFX(bsspc), PFX(pc), symcount);
+}
+
 time_t now;
 char do_force_time_zero;
 
@@ -5114,7 +5123,6 @@ int main(int argc, char **argv)
   Patch *p;
   unsigned char exe[EXE_HEADER_SIZE+4];
   char *pexe = (char *)exe;
-  int symcount = 0;
   int min_uninit;
   char *outfilename, *leader;
   char *current_map_file;
@@ -5175,8 +5183,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  printf("%#x bytes generated, %#x bytes in file, %#x bytes total, %d symbols\n",
-    generated_bytes, bsspc, pc, symcount);
+  print_stats(stdout);
 
   min_uninit = (pc-bsspc+15)/16;
 
@@ -5378,8 +5385,7 @@ int main(int argc, char **argv)
   {
     FILE *mapfile = fopen(argv[3], "w");
     lineaddr_s *laddr;
-    fprintf(mapfile, "%#x bytes generated, %#x bytes in file, %#x bytes total, %d symbols\n",
-      generated_bytes, bsspc, pc, symcount);
+    print_stats(mapfile);
 
     fprintf(mapfile, "\nStart Stop  Length Name Class\n");
     fprintf(mapfile, "%04XH %04XH %04XH  code code\n", 0, pc-1, pc);
