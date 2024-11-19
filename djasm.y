@@ -24,6 +24,9 @@
 #undef _POSIX_SOURCE
 #include "coff.h"
 
+/* This program is untested with smaller or larger ints. YYSTYPE should be changed first. */
+typedef char assert_sizeof_int_4[sizeof(int) == 4 ? 1 : -1];
+
 #define SMALL_EXE_HEADER 0
 #if SMALL_EXE_HEADER
 #define EXE_HEADER_SIZE 32
