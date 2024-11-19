@@ -6939,7 +6939,13 @@ void do_linkcoff(char *filename)
   len = lseek (f, 0L, SEEK_END);
   lseek (f, 0L, SEEK_SET);
   data = (char*)alloca (len);
-  read (f, data, (unsigned)len);
+  if (read(f, data, (unsigned)len) != len) {
+    fprintf(stderr, "%s:%d: error reading COFF file `%s'", inname, lineno, filename);
+    perror("");  /* TODO(pts): Isn't this too late to print the error, i.e. errno has already changed? */
+    close(f);
+    return;
+  }
+    
   close (f);
 
   header = (FILHDR *) data;
