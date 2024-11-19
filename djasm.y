@@ -1359,6 +1359,8 @@ opcode_compare (const void *e1, const void *e2)
   return strcmp (((struct opcode *)e1)->name, ((struct opcode *)e2)->name);
 }
 
+time_t now;
+
 int main(int argc, char **argv)
 {
   Symbol *s;
@@ -1367,7 +1369,6 @@ int main(int argc, char **argv)
   char *pexe = (char *)exe;
   int symcount = 0;
   int min_uninit;
-  time_t now;
   char *outfilename, *leader;
   char *current_map_file;
 
@@ -1460,7 +1461,11 @@ int main(int argc, char **argv)
   exe[63] = 0;
 #define INFO_TEXT_START (64)
 
+#ifdef FORCE_TIME
+  now = FORCE_TIME;
+#else
   time(&now);
+#endif
 
   sprintf(pexe + INFO_TEXT_START, "\r\n%s generated from %s by djasm, on %.24s\r\n", argv[2], argv[1], ctime(&now));
   if (copyright)
@@ -2665,9 +2670,7 @@ void add_copyright(char *buf)
 void add_rcs_ident(void)
 {
   char tmp[500];
-  time_t now;
   struct tm *tm;
-  time(&now);
   tm = localtime(&now);
   sprintf(tmp, "%cId: %s built %04d-%02d-%02d %02d:%02d:%02d by djasm $\n",
 	  '$', inname,
