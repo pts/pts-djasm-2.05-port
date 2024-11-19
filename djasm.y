@@ -367,8 +367,8 @@ typedef int _DJCOFFCHK_EXTRELOC[(RELSZ==10)*3 - 1];
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
-void djerror(char *s);
-void yyerror(char *s);
+void djerror(const char *s);
+void yyerror(const char *s);
 void shxd_error(int opcode);
 
 #define OUT_exe 0
@@ -380,7 +380,7 @@ void shxd_error(int opcode);
 #define OUT_sys 6
 #define OUT_obj 7
 
-char *ext_types[] = {
+const char *ext_types[] = {
   "exe",
   "com",
   "bin",
@@ -392,8 +392,8 @@ char *ext_types[] = {
   0
 };
 
-char *INC_LEADER = "\t.db\t";
-char *S_LEADER = "\t.byte\t";
+const char INC_LEADER[] = "\t.db\t";
+const char S_LEADER[] = "\t.byte\t";
 
 int out_type = OUT_exe;
 int image_type = OUT_exe;
@@ -450,7 +450,8 @@ typedef struct Symbol {
 #define SYM_code	4
 #define SYMTYPES "?ADDTTTT"
 
-Symbol pc_symbol = {0,".",0,1,0,0,0,0,SYM_code};
+char dot_name[] = ".";  /* C+++ requires that this is not `const char'. */
+Symbol pc_symbol = {0,dot_name,0,1,0,0,0,0,SYM_code};
 
 #define REL_abs		0
 #define REL_abs32	1
@@ -467,7 +468,7 @@ typedef struct Patch {
 } Patch;
 
 Symbol *symtab = 0;
-Symbol *get_symbol(char *name, int create);
+Symbol *get_symbol(const char *name, int create);
 Symbol *set_symbol(Symbol *sym, int value);
 Symbol *zerosym;
 int undefs = 0;
@@ -519,8 +520,8 @@ void set_lineaddr();
 void add_copyright(char *buf);
 void add_rcs_ident(void);
 
-void set_out_type(char *type);
-void set_image_type(char *type);
+void set_out_type(const char *type);
+void set_image_type(const char *type);
 void do_include(char *fname);
 void do_linkcoff(char *fname);
 
@@ -588,7 +589,7 @@ void write_MODEND(FILE *outfile, int main_obj, int start_ptr);
 #define NO_ATTR -1
 
 struct opcode {
-  char *name;
+  const char *name;
   int token;
   int attr;
 };
@@ -1708,7 +1709,8 @@ int main(int argc, char **argv)
   char ctime_buf[26];
   char *pexe = (char *)exe;
   int min_uninit;
-  char *outfilename, *leader;
+  char *outfilename;
+  const char *leader;
   char *current_map_file;
 
   if (argv[1] && strcmp(argv[1], "-dt") == 0) {
@@ -2032,14 +2034,14 @@ int main(int argc, char **argv)
   return 0;
 }
 
-void djerror(char *s)
+void djerror(const char *s)
 {
   fprintf(stderr, "%s:%d: %s\n", inname, lineno, s);
   strbuf[strbuflen] = 0;
   total_errors++;
 }
 
-void yyerror(char *s)
+void yyerror(const char *s)
 {
   djerror(s);
   fprintf(stderr, "%s:%d: Last token was `%s' (%s)\n", inname, lineno, last_token, yytname[(unsigned char)yytranslate[last_tret]]);
@@ -2048,8 +2050,8 @@ void yyerror(char *s)
 void
 shxd_error(int opcode)
 {
-  char *bad_op;
-  char *good_op;
+  const char *bad_op;
+  const char *good_op;
   char msg[80];
 
   if (opcode == 4)
@@ -2073,7 +2075,7 @@ static void *xrealloc(void *ptr, size_t size)
   return ptr;
 }
 
-Symbol *get_symbol(char *name, int create)
+Symbol *get_symbol(const char *name, int create)
 {
   Symbol *s;
   for (s=symtab; s; s=s->next)
@@ -2633,7 +2635,7 @@ void reg(int which)
 
 void addr32(int sib)
 {
-  char *err=0;
+  const char *err=0;
 
   if (_modrm.addr16) {
     err="Cannot mix 16 and 32 bit addressing";
@@ -3060,7 +3062,7 @@ void add_rcs_ident(void)
   add_copyright(tmp);
 }
 
-void set_out_type(char *t)
+void set_out_type(const char *t)
 {
   int i;
   for (i=0; ext_types[i]; i++)
@@ -3074,7 +3076,7 @@ void set_out_type(char *t)
   fprintf(stderr,"Unknown output type: `%s'\n", t);
 }
 
-void set_image_type(char *t)
+void set_image_type(const char *t)
 {
   int i;
   for (i=0; ext_types[i]; i++)
