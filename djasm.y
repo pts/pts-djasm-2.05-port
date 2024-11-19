@@ -1737,6 +1737,13 @@ shxd_error(int opcode)
   djerror(msg);
 }
 
+static void fatal(const char *reason);
+static void *xrealloc(void *ptr, size_t size)
+{
+  if (!(ptr = realloc(ptr, size)) && size) fatal("out of memory");
+  return ptr;
+}
+
 Symbol *get_symbol(char *name, int create)
 {
   Symbol *s;
@@ -1745,10 +1752,10 @@ Symbol *get_symbol(char *name, int create)
       return s;
   if (!create)
     return 0;
-  s = (Symbol *)malloc(sizeof(Symbol));
+  s = (Symbol *)xrealloc(NULL, sizeof(Symbol));
   s->next = symtab;
   symtab = s;
-  s->name = (char *)malloc(strlen(name)+1);
+  s->name = (char *)xrealloc(NULL, strlen(name)+1);
   strcpy(s->name, name);
   s->value = 0;
   s->defined = 0;
@@ -2040,7 +2047,7 @@ void sortsyms(int (*sortf)(void const *,void const *))
     return;
   for (s=symtab, ns=0; s; s=s->next)
     ns ++;
-  st = (Symbol **)malloc(sizeof(Symbol *) * ns);
+  st = (Symbol **)xrealloc(NULL, sizeof(Symbol *) * ns);
   for (s=symtab, ns=0; s; s=s->next, ns++)
     st[ns] = s;
   qsort(st, ns, sizeof(Symbol *), sortf);
@@ -2056,7 +2063,7 @@ void emit(void *ptr, int len)
   while (pc + len > outsize)
   {
     outsize += 512;
-    outbin = realloc(outbin, outsize);
+    outbin = xrealloc(outbin, outsize);
   }
   set_lineaddr();
   memcpy(outbin+pc, ptr, len);
@@ -2117,7 +2124,7 @@ void emits(Symbol *s, int offset, int rel)
     }
     return;
   }
-  p = (Patch *)malloc(sizeof(Patch));
+  p = (Patch *)xrealloc(NULL, sizeof(Patch));
   p->next = s->patches;
   s->patches = p;
   p->location = pc;
@@ -2266,7 +2273,7 @@ void reg(int which)
     else
     {
       Patch *p;
-      p = (Patch *)malloc(sizeof(Patch));
+      p = (Patch *)xrealloc(NULL, sizeof(Patch));
       p->next = s->patches;
       s->patches = p;
       p->location = pc+1+needsib; /* ALL bytes emitted below, accounts for yet to be emitted mbyte */
@@ -2656,10 +2663,7 @@ void set_lineaddr()
   if (num_lineaddr == max_lineaddr)
   {
     max_lineaddr += 32;
-    if (lineaddr)
-      lineaddr = (lineaddr_s *)realloc(lineaddr, max_lineaddr * sizeof(lineaddr_s));
-    else
-      lineaddr = (lineaddr_s *)malloc(max_lineaddr * sizeof(lineaddr_s));
+    lineaddr = (lineaddr_s *)xrealloc(lineaddr, max_lineaddr * sizeof(lineaddr_s));
   }
   lineaddr[num_lineaddr].line = lineno;
   lineaddr[num_lineaddr].addr = pc;
@@ -2687,11 +2691,11 @@ void add_copyright(char *buf)
   char *tmp;
   if (copyright == 0)
   {
-    copyright = (char *)malloc(strlen(buf)+1);
+    copyright = (char *)xrealloc(NULL, strlen(buf)+1);
     strcpy(copyright, buf);
     return;
   }
-  tmp = (char *)malloc(strlen(copyright) + strlen(buf) + 3);
+  tmp = (char *)xrealloc(NULL, strlen(copyright) + strlen(buf) + 3);
   strcpy(tmp, copyright);
   strcat(tmp, "\r\n");
   strcat(tmp, buf);
@@ -2774,7 +2778,7 @@ void do_include(char *fname)
     perror("");
     return;
   }
-  fs = (FileStack *)malloc(sizeof(FileStack));
+  fs = (FileStack *)xrealloc(NULL, sizeof(FileStack));
   fs->line = lineno;
   fs->prev = file_stack;
   fs->f = infile;
@@ -2782,7 +2786,7 @@ void do_include(char *fname)
   file_stack = fs;
 
   infile = f;
-  inname = (char *)malloc(strlen(fname)+1);
+  inname = (char *)xrealloc(NULL, strlen(fname)+1);
   strcpy(inname, fname);
   lineno = 1;
 }
