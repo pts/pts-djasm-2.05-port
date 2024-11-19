@@ -5122,6 +5122,7 @@ int main(int argc, char **argv)
   Symbol *s;
   Patch *p;
   unsigned char exe[EXE_HEADER_SIZE+4];
+  char ctime_buf[26];
   char *pexe = (char *)exe;
   int min_uninit;
   char *outfilename, *leader;
@@ -5227,7 +5228,14 @@ int main(int argc, char **argv)
   if (!do_force_time_zero) time(&now);
 #endif
 
-  sprintf(pexe + INFO_TEXT_START, "\r\n%s generated from %s by djasm, on %.24s\r\n", argv[2], argv[1], ctime(&now));
+#ifdef USE_CTIME_R
+  memset(ctime_buf, '\0', sizeof(ctime_buf));
+  ctime_r(&now, ctime_buf);
+#else
+  strncpy(ctime_buf, ctime(&now), 24);
+#endif
+  ctime_buf[24] = '\0';  /* Truncate before the trailing '\n'. */
+  sprintf(pexe + INFO_TEXT_START, "\r\n%s generated from %s by djasm, on %s\r\n", argv[2], argv[1], ctime_buf);
   if (copyright)
     strncat(pexe + INFO_TEXT_START, copyright, (512-3-INFO_TEXT_START) - strlen(pexe + INFO_TEXT_START)); /* -3 for the following line: */
   strcat(pexe + INFO_TEXT_START, "\r\n\032");
