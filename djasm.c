@@ -5094,7 +5094,9 @@ int scmp_a(void const *a, void const *b)
 
 int scmp_n(void const *a, void const *b)
 {
-  return (*(Symbol **)a)->value - (*(Symbol **)b)->value;
+  int diff = (*(Symbol **)a)->value - (*(Symbol **)b)->value;
+  /* If the value is the same, compare by name. this makes the sort deterministic. */
+  return diff == 0 ? strcmp((*(Symbol **)a)->name, (*(Symbol **)b)->name) : diff;
 }
 
 static int
