@@ -6105,6 +6105,12 @@ static struct {
   {'>', '>', OP_SHR}
 };
 
+static void fatal(const char *reason)
+{
+  fprintf(stderr, "%s:%d: fatal: %s\n", inname, lineno, reason);
+  exit(100);
+}
+
 int yylex1(void)
 {
   int c, c2, i, oldc;
@@ -6246,6 +6252,7 @@ int yylex1(void)
         c = fgetc(infile);
         if (c == oldc)
         {
+          strbuf[i] = '\0';
           strcpy(last_token, strbuf);
           strbuflen = i;
           if (strbuflen == 1)
@@ -6255,6 +6262,8 @@ int yylex1(void)
           }
           return STRING;
 	}
+	if (c < 0) fatal("EOF in string");
+	if (i >= (int)(sizeof(strbuf) - 1)) fatal("string too long");
         switch (c)
         {
           case '\\':
