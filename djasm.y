@@ -2431,8 +2431,8 @@ int yylex1(void)
 	}
 
     do_number:
-    #ifdef __linux
-      /* fscanf "%i" doesn't work reliably with libc5.4.44 for large hex nubmers */
+    #if 1  /* Don't depend on fscanf(3). */
+      /* #ifdef __linux: fscanf "%i" doesn't work reliably with libc5.4.44 for large hex nubmers */
       if (c == '0')
         {
 	  /* octal or hex */
