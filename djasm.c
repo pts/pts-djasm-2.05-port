@@ -329,6 +329,33 @@
 #define O_BINARY 0
 #endif
 
+#if defined(__WATCOMC__) && defined(_WIN32)
+/* owcc -bwin32 -Wl,runtime -Wl,console=3.10 -fnostdlib -s -Os -c nouser32.c */
+
+/* Overrides lib386/nt/clib3r.lib / mbcupper.o
+ * Source: https://github.com/open-watcom/open-watcom-v2/blob/master/bld/clib/mbyte/c/mbcupper.c
+ * Overridden implementation calls CharUpperA in USER32.DLL:
+ * https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-charuppera
+ *
+ * This function is a transitive dependency of _cstart() with main() in
+ * OpenWatcom. By overridding it, we remove the transitive dependency of all
+ * .exe files compiled with `owcc -bwin32' on USER32.DLL.
+ *
+ * This is a simplified implementation, it keeps non-ASCII characters intact.
+ */
+unsigned int _mbctoupper(unsigned int c) {
+  return (c - 'a' + 0U <= 'z' - 'a' + 0U)  ? c + 'A' - 'a' : c;
+}
+#endif
+
+#ifdef __WATCOMC__
+#  ifndef __attribute__
+#    define __attribute__(x)
+#  endif
+#else  /* GCC, Clang, TinyCC, PCC */
+#  define _Packed
+#endif
+
 /* This program is untested with smaller or larger ints. YYSTYPE should be changed first. */
 typedef char assert_sizeof_int_4[sizeof(int) == 4 ? 1 : -1];
 typedef char assert_sizeof_unsigned_short[sizeof(unsigned short) ? 1 : -1];  /* make sure it is 32 bits */
@@ -455,7 +482,7 @@ typedef int _DJCOFFCHK_SCNHDR[(SCNHSZ == 10 * 4)*3 - 1];  /* make sure it is 32 
  * grouping will have l_lnno = 0 and in place of physical address will be the
  * symbol table index of the function name.
  */
-struct external_lineno {
+_Packed struct external_lineno {
   union {
     ULONG32 l_symndx;				/* function name symbol index, iff l_lnno == 0 */
     ULONG32 l_paddr;				/* (physical) address of line number */
@@ -475,7 +502,7 @@ typedef int _DJCOFFCHK_EXTLINENO[(LINESZ==6)*3 - 1];
 #define E_FILNMLEN	14	/* # characters in a file name		*/
 #define E_DIMNUM	4	/* # array dimensions in auxiliary entry */
 
-struct external_syment
+_Packed struct external_syment
 {
   union {
     char e_name[E_SYMNMLEN];
@@ -496,17 +523,17 @@ struct external_syment
 #define N_BTSHFT	(4)
 #define N_TSHIFT	(2)
 
-union external_auxent {
-  struct {
+_Packed union external_auxent {
+  _Packed struct {
     ULONG32 x_tagndx;					/* str, un, or enum tag indx */
     union {
-      struct {
+      _Packed struct {
         unsigned short x_lnno;				/* declaration line number */
         unsigned short x_size;				/* str/union/array size */
       } __attribute__((packed)) x_lnsz;
       ULONG32 x_fsize;					/* size of function */
     } x_misc;
-    union {
+    _Packed union {
       struct {						/* if ISFCN, tag, or .bb */
         ULONG32 x_lnnoptr;				/* ptr to fcn line # */
         ULONG32 x_endndx;				/* entry ndx past block end */
@@ -518,7 +545,7 @@ union external_auxent {
     unsigned short x_tvndx;				/* tv index */
   } __attribute__((packed)) x_sym;
 
-  union {
+  _Packed union {
     char x_fname[E_FILNMLEN];
     struct {
       ULONG32 x_zeroes;
@@ -526,13 +553,13 @@ union external_auxent {
     } x_n;
   } __attribute__((packed)) x_file;
 
-  struct {
+  _Packed struct {
     ULONG32 x_scnlen;					/* section length */
     unsigned short x_nreloc;				/* # relocation entries */
     unsigned short x_nlinno;				/* # line numbers */
   } __attribute__((packed)) x_scn;
 
-  struct {
+  _Packed struct {
     ULONG32 x_tvfill;					/* tv fill value */
     unsigned short x_tvlen;				/* length of .tv */
     unsigned short x_tvran[2];				/* tv range */
@@ -634,7 +661,7 @@ typedef int _DJCOFFCHK_EXTAUXENT[(AUXESZ==18)*3 - 1];
 /********************** RELOCATION DIRECTIVES **********************/
 
 
-struct external_reloc {
+_Packed struct external_reloc {
   ULONG32        r_vaddr;
   ULONG32        r_symndx;
   unsigned short r_type;
@@ -6642,7 +6669,7 @@ int yylex1(void)
             break;
         }
       }
-      abort ();
+      break;  /* Unreachable. */
     case ';':
       while (fgetc(infile) != '\n');
       c = '\n';
