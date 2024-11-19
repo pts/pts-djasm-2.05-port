@@ -92,10 +92,10 @@ typedef struct {
 
 lineaddr_s *lineaddr=0;
 int num_lineaddr=0;
-int max_lineaddr=0;
+unsigned max_lineaddr, lineaddr_bufsize;
 
 unsigned char *outbin = 0;
-int outsize = 0;
+unsigned outsize = 0;
 int pc = 0;
 int bsspc = -1;
 int stack_ptr = 0;
@@ -2060,9 +2060,10 @@ void sortsyms(int (*sortf)(void const *,void const *))
 
 void emit(void *ptr, int len)
 {
-  while (pc + len > outsize)
+  while (pc + len + 0U > outsize)
   {
-    outsize += 512;
+    outsize = outsize < 0x1000 ? 0x1000 : outsize << 1;
+    if ((int)outsize < 0) outsize = -1;  /* Produce out-of-memory on overflow. */
     outbin = xrealloc(outbin, outsize);
   }
   set_lineaddr();
@@ -2660,10 +2661,12 @@ void set_lineaddr()
   if (lineno == last_lineno)
     return;
   last_lineno = lineno;
-  if (num_lineaddr == max_lineaddr)
+  if (num_lineaddr + 0U == max_lineaddr)
   {
-    max_lineaddr += 32;
-    lineaddr = (lineaddr_s *)xrealloc(lineaddr, max_lineaddr * sizeof(lineaddr_s));
+    lineaddr_bufsize = lineaddr_bufsize < 0x1000 ? 0x1000 : lineaddr_bufsize << 1;
+    if ((int)lineaddr_bufsize < 0) lineaddr_bufsize = -1;  /* Produce out-of-memory on overflow. */
+    lineaddr = (lineaddr_s *)xrealloc(lineaddr, lineaddr_bufsize);
+    max_lineaddr = lineaddr_bufsize / sizeof(lineaddr_s);
   }
   lineaddr[num_lineaddr].line = lineno;
   lineaddr[num_lineaddr].addr = pc;
