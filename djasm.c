@@ -377,14 +377,14 @@ int i;
 int lineno = 1;
 char *inname;
 int total_errors = 0;
-char last_token[100];
+char strbuf[200];
+char last_token[sizeof(strbuf)];
 int last_tret;
 char *copyright = 0;
 
 int last_align_begin=-1, last_align_end=-1;
 int generated_bytes = -1;
 
-char strbuf[200];
 int strbuflen;
 
 typedef struct {
