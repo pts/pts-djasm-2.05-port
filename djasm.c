@@ -6114,6 +6114,9 @@ int yylex1(void)
     c = fgetc(infile);
   } while (c == ' ' || c == '\t');
 
+  if ((c | 32) - 'a' + 0U <= 'z' - 'a' + 0U || c == '_' || c == '$' || c == '.' || c == '@') goto do_name;
+  if (c - '0' + 0U <= 9U) goto do_number;
+
   switch (c)
   {
     case EOF:
@@ -6131,23 +6134,10 @@ int yylex1(void)
       }
       return 0;
 
-    case 'a' ... 'z':
-    case 'A' ... 'Z':
-    case '_':
-    case '$':
-    case '.':
-    case '@':
     case '?':
-      if (c=='?')
-	{
-	  strbuf[0]=c;
-	  fscanf(infile, "%[a-zA-Z0-9_$.@]", strbuf+1);
-	}
-      else
-	{
-	  ungetc(c, infile);
-	  fscanf(infile, "%[a-zA-Z0-9_$.@]", strbuf);
-	}
+    do_name:
+      strbuf[0]=c;
+      if (fscanf(infile, "%[a-zA-Z0-9_$.@]", strbuf+1) != 1) strbuf[1] = '\0';
       strcpy(last_token, strbuf);
       if (strcmp(strbuf, ".") == 0)
         return PC;
@@ -6168,7 +6158,7 @@ int yylex1(void)
 	  return yylval.sym->defined ? KID : UID;
 	}
 
-    case '0' ... '9':
+    do_number:
     #ifdef __linux
       /* fscanf "%i" doesn't work reliably with libc5.4.44 for large hex nubmers */
       if (c == '0')
