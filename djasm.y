@@ -1360,6 +1360,7 @@ opcode_compare (const void *e1, const void *e2)
 }
 
 time_t now;
+char do_force_time_zero;
 
 int main(int argc, char **argv)
 {
@@ -1371,6 +1372,12 @@ int main(int argc, char **argv)
   int min_uninit;
   char *outfilename, *leader;
   char *current_map_file;
+
+  if (argv[1] && strcmp(argv[1], "-dt") == 0) {
+    do_force_time_zero = 1;
+    ++argv;
+    --argc;
+  }
 
   if (argc < 2)
   {
@@ -1464,7 +1471,7 @@ int main(int argc, char **argv)
 #ifdef FORCE_TIME
   now = FORCE_TIME;
 #else
-  time(&now);
+  if (!do_force_time_zero) time(&now);
 #endif
 
   sprintf(pexe + INFO_TEXT_START, "\r\n%s generated from %s by djasm, on %.24s\r\n", argv[2], argv[1], ctime(&now));
