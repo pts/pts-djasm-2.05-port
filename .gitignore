@@ -4,3 +4,8 @@
 /djasm.m32
 /djasm.mini
 /djasm.exe
+/test/stub.h
+/test/stub.map
+/test/mwperun.exe
+/test/djasm.exe
+/test/stub.exe
