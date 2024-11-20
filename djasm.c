@@ -486,8 +486,8 @@ _Packed struct external_lineno {
   union {
     ULONG32 l_symndx;				/* function name symbol index, iff l_lnno == 0 */
     ULONG32 l_paddr;				/* (physical) address of line number */
-  } l_addr;
-  unsigned short l_lnno;			/* line number */
+  } l_addr __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
+  unsigned short l_lnno;  /* line number */
 } __attribute__((packed));
 
 #define LINENO	struct external_lineno
@@ -510,8 +510,8 @@ _Packed struct external_syment
       ULONG32 e_zeroes;
       ULONG32 e_offset;
     } e;
-  } e;
-  ULONG32 e_value;
+  } e __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
+  ULONG32 e_value __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
   short e_scnum;
   unsigned short e_type;
   unsigned char e_sclass;
@@ -525,18 +525,18 @@ _Packed struct external_syment
 
 _Packed union external_auxent {
   _Packed struct {
-    ULONG32 x_tagndx;					/* str, un, or enum tag indx */
+    ULONG32 x_tagndx __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */					/* str, un, or enum tag indx */
     union {
       _Packed struct {
         unsigned short x_lnno;				/* declaration line number */
         unsigned short x_size;				/* str/union/array size */
       } __attribute__((packed)) x_lnsz;
-      ULONG32 x_fsize;					/* size of function */
+      ULONG32 x_fsize __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */					/* size of function */
     } x_misc;
     _Packed union {
       struct {						/* if ISFCN, tag, or .bb */
-        ULONG32 x_lnnoptr;				/* ptr to fcn line # */
-        ULONG32 x_endndx;				/* entry ndx past block end */
+        ULONG32 x_lnnoptr __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */				/* ptr to fcn line # */
+        ULONG32 x_endndx __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */				/* entry ndx past block end */
       } x_fcn;
       struct {						/* if ISARY, up to 4 dimen. */
         unsigned short x_dimen[E_DIMNUM];
@@ -548,19 +548,19 @@ _Packed union external_auxent {
   _Packed union {
     char x_fname[E_FILNMLEN];
     struct {
-      ULONG32 x_zeroes;
-      ULONG32 x_offset;
+      ULONG32 x_zeroes __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
+      ULONG32 x_offset __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
     } x_n;
   } __attribute__((packed)) x_file;
 
   _Packed struct {
-    ULONG32 x_scnlen;					/* section length */
+    ULONG32 x_scnlen __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */					/* section length */
     unsigned short x_nreloc;				/* # relocation entries */
     unsigned short x_nlinno;				/* # line numbers */
   } __attribute__((packed)) x_scn;
 
   _Packed struct {
-    ULONG32 x_tvfill;					/* tv fill value */
+    ULONG32 x_tvfill __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */					/* tv fill value */
     unsigned short x_tvlen;				/* length of .tv */
     unsigned short x_tvran[2];				/* tv range */
   } __attribute__((packed)) x_tv;			/* info about .tv section (in auxent of symbol .tv)) */
@@ -662,8 +662,8 @@ typedef int _DJCOFFCHK_EXTAUXENT[(AUXESZ==18)*3 - 1];
 
 
 _Packed struct external_reloc {
-  ULONG32        r_vaddr;
-  ULONG32        r_symndx;
+  ULONG32        r_vaddr __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
+  ULONG32        r_symndx __attribute__((packed));  /* __TINYCC__ requires this __attribute__((packed)). */
   unsigned short r_type;
 } __attribute__((packed));
 
