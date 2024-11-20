@@ -5480,6 +5480,12 @@ static void print_stats(FILE *f)
 time_t now;
 char do_force_time_zero;
 
+#if defined(__WATCOMC__) && defined(_WIN32)
+#  define _RWD_timezone timezone
+#  define _RWD_dst_adjust __dst_adjust
+  extern int __dst_adjust;
+#endif
+
 int main(int argc, char **argv)
 {
   Symbol *s;
@@ -5596,6 +5602,10 @@ int main(int argc, char **argv)
   memset(ctime_buf, '\0', sizeof(ctime_buf));
   ctime_r(&now, ctime_buf);
 #else
+#if defined(__WATCOMC__) && defined(_WIN32)
+  if (do_force_time_zero) _RWD_timezone = _RWD_dst_adjust = 0;
+#endif
+  fprintf(stderr, "now=%d ctime=(%s)\n", now, ctime(&now));
   strncpy(ctime_buf, ctime(&now), 24);
 #endif
   ctime_buf[24] = '\0';  /* Truncate before the trailing '\n'. */
@@ -6820,6 +6830,9 @@ void add_rcs_ident(void)
 {
   char tmp[500];
   struct tm *tm;
+#if defined(__WATCOMC__) && defined(_WIN32)  /* TODO(pts): Make emulation respect the TZ=GMT environment variable. */  /* TODO(pts): Make this consistent, not only Win32. */
+  if (do_force_time_zero) _RWD_timezone = _RWD_dst_adjust = 0;
+#endif
   tm = localtime(&now);
   sprintf(tmp, "%cId: %s built %04d-%02d-%02d %02d:%02d:%02d by djasm $\n",
 	  '$', inname,
