@@ -3509,12 +3509,12 @@ yyreduce:
 
   case 7:
 #line 693 "djasm.y"
-    { set_symbol((yyvsp[(1) - (2)].sym), pc)->type |= (pc?SYM_data:SYM_code); ;}
+    { Symbol *s = set_symbol((yyvsp[(1) - (2)].sym), pc); s->type |= (pc?SYM_data:SYM_code); ;}
     break;
 
   case 8:
 #line 694 "djasm.y"
-    { set_symbol((yyvsp[(1) - (3)].sym), (yyvsp[(3) - (3)].i))->type = SYM_abs; ;}
+    { Symbol *s = set_symbol((yyvsp[(1) - (3)].sym), (yyvsp[(3) - (3)].i)); s->type = SYM_abs; ;}
     break;
 
   case 9:
@@ -3530,7 +3530,7 @@ yyreduce:
 
   case 10:
 #line 703 "djasm.y"
-    { set_symbol((yyvsp[(2) - (6)].sym), struct_pc)->type = SYM_abs;
+    { Symbol *s = set_symbol((yyvsp[(2) - (6)].sym), struct_pc); s->type = SYM_abs;
 					  (yyvsp[(4) - (6)].sym)->next=symtab;
 					  symtab=(yyvsp[(4) - (6)].sym);
 	  				;}
@@ -5946,7 +5946,7 @@ int set_structure_symbols(Symbol *ele, Symbol *struc, int tp, int base, int type
     djerror("symbol must be a .struct or .union");
     return 0;
   }
-  set_symbol(ele,base)->type|=type;
+  { Symbol *s = set_symbol(ele,base); s->type|=type; }
   {
     int sLen=strlen(struc->name);
     int eLen=strlen(ele->name);
@@ -5955,7 +5955,7 @@ int set_structure_symbols(Symbol *ele, Symbol *struc, int tp, int base, int type
       char *id=(char*)alloca(strlen(s->name)-sLen+eLen+1);
       strcpy(id,ele->name);
       strcpy(id+eLen,s->name+sLen);
-      set_symbol(get_symbol(id,1),base+s->value)->type|=type;
+      { Symbol *s2 = set_symbol(get_symbol(id,1),base+s->value); s2->type|=type; }
       s=s->next;
     }
   }
@@ -6923,6 +6923,7 @@ void do_linkcoff(char *filename)
 #endif
   char smallname[9];
 /*unsigned char *cp;*/
+  Symbol *s;
 
 #ifndef USE_COFF_UNCHECKED
   len = 1;
@@ -6997,16 +6998,16 @@ void do_linkcoff(char *filename)
 	  switch (symbol->e_scnum)
 	    {
 	    case 1:
-	      set_symbol (get_symbol (p, 1),
-			  textbase + symbol->e_value)->type |= SYM_code;
+	      s = set_symbol (get_symbol (p, 1),
+			  textbase + symbol->e_value); s->type |= SYM_code;
 	      break;
 	    case 2:
-	      set_symbol (get_symbol (p, 1),
-			  textbase + symbol->e_value)->type |= SYM_data;
+	      s = set_symbol (get_symbol (p, 1),
+			  textbase + symbol->e_value); s->type |= SYM_data;
 	      break;
 	    case 3:
-	      set_symbol (get_symbol (p, 1),
-			  textbase + symbol->e_value)->type |= SYM_data;
+	      s = set_symbol (get_symbol (p, 1),
+			  textbase + symbol->e_value); s->type |= SYM_data;
 	      break;
 	    case N_UNDEF:
 	      if (symbol->e_value == 0)
@@ -7014,7 +7015,7 @@ void do_linkcoff(char *filename)
 	      else if (!get_symbol (p, 0))
 		{
 		  /* New common variable.  */
-		  set_symbol (get_symbol (p, 1), pc)->type |= SYM_data;
+		  s = set_symbol (get_symbol (p, 1), pc); s->type |= SYM_data;
 		  for (i = 0; i < symbol->e_value; i++)
 		    emitb (0);
 		}
