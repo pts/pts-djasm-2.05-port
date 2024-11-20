@@ -543,7 +543,7 @@ int islocal(char *symname);
 void do_sreg_pop(int sreg);
 void do_sreg_push(int sreg);
 void do_align(int p2, int val);
-void set_lineaddr();
+void set_lineaddr(void);
 void add_copyright(char *buf);
 void add_rcs_ident(void);
 
@@ -3013,7 +3013,7 @@ void do_sreg_push(int sreg)
   }
 }
 
-void set_lineaddr()
+void set_lineaddr(void)
 {
   static int last_lineno = -1;
   if (lineno == last_lineno)
