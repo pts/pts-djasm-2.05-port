@@ -45,6 +45,12 @@ unsigned int _mbctoupper(unsigned int c) {
 }
 #endif
 
+#if defined(__MINILIBC686__) && defined(__GNUC__) && defined(__GNUC_MINOR__) && ((__GNUC__ << 16) + __GNUC_MINOR__) < 0x40003
+  /* Workaround for GCC 4.1 and 4.2 with minilibc686. It's needed because GCC generates a reference to memcpy(...). */
+  void *gcc_memcpy(void *dest, const void *src, size_t n) __asm__("memcpy");
+  void *gcc_memcpy(void *dest, const void *src, size_t n) { return memcpy(dest, src, n); }  /* Calls mini_memcpy(...). */
+#endif
+
 #ifdef __WATCOMC__
 #  ifndef __attribute__
 #    define __attribute__(x)
